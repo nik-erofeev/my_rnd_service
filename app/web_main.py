@@ -3,12 +3,14 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.api.default.routers import router as default_router
 from app.api.example.routers import router as example_router
 from app.core.config import CONFIG, EnvConfig
 from app.core.kafka_broker.brokers import broker
 from app.core.logger.logger import get_logger, setup_logger
+from app.metrics import setup_fastapi_metrics
 
 setup_logger(CONFIG)
 logger = get_logger(__name__)
@@ -152,16 +154,18 @@ def create_app(config: EnvConfig) -> FastAPI:
         allow_headers=["*"],
     )
 
-    # # эндпоинт для отображения метрик для их дальнейшего сбора Прометеусом
-    # from prometheus_fastapi_instrumentator import Instrumentator
-    # instrumentator = Instrumentator(
-    #     should_group_status_codes=False,
-    #     excluded_handlers=[".*admin.*", "/metrics"],
-    # )
-    # instrumentator.instrument(app_).expose(
-    #     app_,
-    #     include_in_schema=True,
-    # )  # можно выкл
+    # эндпоинт для отображения метрик для их дальнейшего сбора Прометеусом
+    instrumentator = Instrumentator(
+        should_group_status_codes=False,
+        excluded_handlers=[".*admin.*", "/metrics"],
+    )
+    instrumentator.instrument(app_).expose(
+        app_,
+        include_in_schema=True,
+    )  # можно выкл
+
+    # Кастомные метрики fastapi_* для дашборда 16110 # todo: опционально
+    setup_fastapi_metrics(app_, app_name=config.api.project_name)
 
     _init_routes(app_)
 
