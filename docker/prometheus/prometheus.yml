@@ -1,0 +1,19 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+
+  # 🔹 Вариант A: FastStream в Docker (раскомментируй, когда запускаешь через docker-compose)
+  - job_name: "fs_subscriber-docker"
+    metrics_path: /metrics  # почемуто /metrics не работает -> редирект на /metrics/
+    static_configs:
+      - targets: ["app_template_rag:8080"]  # ← имя сервиса в docker-compose
+
+
+
+##  # 🔹 Вариант B: FastStream на хосте (раскомментируй, когда запускаешь локально)
+#   - job_name: "faststream-local"
+#     metrics_path: /metrics
+#     static_configs:
+#       - targets: ["host.docker.internal:8080"]

@@ -130,6 +130,8 @@ async def send_test_message():
 async def send_messages_multiple_times(count: int):
 
     await broker.connect()
+    # while True:
+    #     await asyncio.sleep(1)
     tasks = [send_test_message() for _ in range(count)]
     await asyncio.gather(*tasks)
     logger.info(f"Отправлено сообщений: {len(tasks)}")

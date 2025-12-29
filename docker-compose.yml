@@ -70,9 +70,75 @@ services:
      timeout: 5s
      retries: 3
   
+  grafana:
+    container_name: grafana_1
+    image: grafana/grafana:12.1.0
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+      - GF_ANALYTICS_CHECK_FOR_UPDATES=false
+      - GF_LOG_LEVEL=debug
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docker/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+    depends_on:
+      - prometheus
+    networks:
+      - default
 
+  prometheus:
+    container_name: prometheus_1
+    image: prom/prometheus:v2.53.0
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    networks:
+      - default
+
+  # для логов grafana-dashboard
+  loki:
+    container_name: ${DOCKER_NAME}_loki
+    image: grafana/loki:2.8.2
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./docker/loki-config.yaml:/etc/loki/local-config.yaml:ro
+    networks:
+      - default
+
+  # для loki
+  promtail:
+    container_name: ${DOCKER_NAME}_promtail
+    image: grafana/promtail:2.8.2
+    restart: unless-stopped
+    ports:
+      - "9080:9080"
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./docker/promtail/config.yaml:/etc/promtail/config.yaml:ro
+    command: -config.file=/etc/promtail/config.yaml
+    networks:
+      - default
+    depends_on:
+      - loki
 
 networks:
 #  custom: #(имя сети) project_name_custom
   default: #(имя сети) project_name_custom
     driver: bridge
+
+volumes:
+  grafana_data:
+  opensearch_data:
