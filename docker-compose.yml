@@ -1,0 +1,78 @@
+services:
+  kafka_template:
+    #    image: bitnami/kafka:3.5.0
+    image: docker.io/bitnamilegacy/kafka:3.5.0
+    container_name: kafka_template
+    hostname: kafka
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      # Включаем KRaft (без ZooKeeper)
+      - KAFKA_ENABLE_KRAFT=yes
+      - KAFKA_CFG_NODE_ID=1
+      - KAFKA_CFG_PROCESS_ROLES=broker,controller
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+
+      # Три листенера: внутренний (PLAINTEXT), внешний (OUTSIDE), контроллер (CONTROLLER)
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,OUTSIDE://:29092,CONTROLLER://:9093
+
+      # Протоколы
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,OUTSIDE:PLAINTEXT,CONTROLLER:PLAINTEXT
+
+      # Рекламируемые адреса:
+      # - Внутри Docker: kafka:9092
+      # - С хоста: localhost:29092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,OUTSIDE://localhost:29092
+
+      # Указываем, что OUTSIDE слушает на localhost:29092
+      - KAFKA_CFG_LISTENER_NAME_OUTSIDE_ADVERTISED_HOST_NAME=localhost
+      - KAFKA_CFG_LISTENER_NAME_OUTSIDE_ADVERTISED_PORT=29092
+
+      # Кворум контроллера
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka:9093
+
+      # ID брокера
+      - KAFKA_BROKER_ID=1
+
+      # Разрешить plaintext (для тестов)
+      - ALLOW_PLAINTEXT_LISTENER=yes
+
+    networks:
+      #      - custom
+      - default
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "bash", "-lc", "</dev/tcp/localhost/9092" ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  app_template_rag:
+    container_name: app_template_rag
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    # command: ['/app_example/docker/app.sh']
+    env_file:
+      - .env
+    depends_on:
+      - kafka_template
+    ports:
+      - "8080:8080"
+    networks:
+#      - custom
+      - default
+    healthcheck:
+     test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+     interval: 30s
+     timeout: 5s
+     retries: 3
+  
+
+
+networks:
+#  custom: #(имя сети) project_name_custom
+  default: #(имя сети) project_name_custom
+    driver: bridge

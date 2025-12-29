@@ -1,0 +1,10 @@
+# Python
+__pychache__
+app.egg-info
+*.pyc
+.mypy_cache
+.DS_Store
+.coverage
+htmlcov
+venv
+.venv
