@@ -3,27 +3,17 @@ import sys
 from typing import Any
 
 from app.core.config import EnvConfig
-from app.core.logger.filters import (
-    MessageHeadersFilter,
-    MessageKeyFilter,
-    RequestIdFilter,
-    StagesFilter,
-)
-from app.core.logger.formatter import ColoredFormatter, create_formatter
-
-# 
 from app.core.exceptions import BusinessException
-from app.core.logger.formatter import TslgFormatter
+from app.core.logger.filters import MessageHeadersFilter, MessageKeyFilter, RequestIdFilter, StagesFilter
+from app.core.logger.formatter import ColoredFormatter, TslgFormatter
 from app.core.logger.handlers.fluent import FluentHandler
 from app.core.logger.handlers.tslg_kafka import TslgKafkaHandler
 from app.core.logger.handlers.tslg_socket import TslgSocketHandler
-
 from rnd_connectors.fluent.client import FluentdClient
 from rnd_connectors.fluent.protocols import FluentdConfigProtocol
 from rnd_connectors.fluent.schemas import ErrorType, FluentError
 from rnd_connectors.tslg.client import KafkaProducerClient
 from rnd_connectors.tslg.protocols import TSLGConfigProtocol
-# 
 
 # ============================================================================
 # Constants
@@ -49,7 +39,7 @@ _COMMON_FILTERS = [
 # Log Record Factory
 # ============================================================================
 
-# 
+
 def _custom_log_record_factory(*args: Any, **kwargs: Any) -> logging.LogRecord:
     """
     Кастомная фабрика LogRecord.
@@ -89,7 +79,6 @@ def _build_errors_from_exception(record: logging.LogRecord) -> list[FluentError]
         errors.append(FluentError())
 
     return errors
-# 
 
 
 # ============================================================================
@@ -143,7 +132,6 @@ def _get_console_handler(env_config: EnvConfig) -> logging.Handler:
     return _setup_handler(handler=handler, formatter=formatter, log_level=env_config.log_level)
 
 
-# 
 def _get_fluentd_handler(fluent_config: FluentdConfigProtocol) -> logging.Handler:
     """Создаёт обработчик для отправки логов в Fluentd."""
     fluentd_client = FluentdClient(fluent_config)
@@ -165,7 +153,6 @@ def _get_tslg_kafka_handler(tslg_config: TSLGConfigProtocol) -> logging.Handler:
     handler = TslgKafkaHandler(producer_client=producer_client)
     formatter = TslgFormatter(config=tslg_config, is_fluentbit=False)
     return _setup_handler(handler=handler, formatter=formatter, log_level=tslg_config.log_level)
-# 
 
 
 # ============================================================================
@@ -177,7 +164,6 @@ def _collect_handlers(env_config: EnvConfig) -> list[logging.Handler]:
     """Собирает список обработчиков на основе конфигов."""
     handlers = [_get_console_handler(env_config)]
 
-    # 
     if env_config.fluent.external_efk_enabled or env_config.fluent.external_db_enabled:
         handlers.append(_get_fluentd_handler(env_config.fluent))
 
@@ -192,7 +178,6 @@ def _collect_handlers(env_config: EnvConfig) -> list[logging.Handler]:
             handlers.append(_get_tslg_kafka_handler(env_config.tslg))
         except Exception as e:
             print(f"Failed to init TSLG Kafka handler: {e}", file=sys.stderr)
-    # 
 
     return handlers
 
@@ -218,10 +203,8 @@ def setup_logger(env_config: EnvConfig) -> None:
         datefmt=DATE_FORMAT,
     )
 
-    # 
     logging.setLogRecordFactory(_custom_log_record_factory)
     logging.raiseExceptions = env_config.fluent.raise_exceptions
-    # 
 
 
 def get_logger(name: str | None = None) -> logging.Logger:
@@ -237,4 +220,3 @@ def get_logger(name: str | None = None) -> logging.Logger:
     if name is None:
         return logging.getLogger()
     return logging.getLogger(name)
-

@@ -1,21 +1,13 @@
-import json
 from collections.abc import Awaitable, Callable
 from typing import Any
 
 from faststream import BaseMiddleware, PublishCommand, StreamMessage
 from pydantic import ValidationError
-from rnd_connectors.fluent.schemas import StagesKafkaMessages
 
 from app.core.kafka_broker.utils.header_validation import HeadersValidator
 from app.core.logger import get_logger
-from app.core.kafka_broker.utils.header_validation import HeadersValidator
-from app.core.logger import get_logger
-from app.core.logger.context_storage import (
-    message_headers,
-    message_key,
-    request_id,
-    stages_context,
-)
+from app.core.logger.context_storage import message_headers, message_key, request_id, stages_context
+from rnd_connectors.fluent.schemas import StagesKafkaMessages
 
 logger = get_logger(__name__)
 
@@ -84,13 +76,13 @@ class RequestContextMiddleware(BaseMiddleware):
         # но если пользователь хочет строгости - можно strict=True.
         # В vtb_3287 decoder использует Pydantic validation.
         validated = HeadersValidator.validate_headers(headers_dict, strict=True)
-        
+
         if validated is None:
             # validate_headers возвращает None при ошибке и логирует её.
             # Нам нужно выбросить исключение, чтобы error_handler его поймал.
             missing = HeadersValidator.get_missing_fields(headers_dict)
             raise ValueError(f"Invalid headers. Missing: {missing}")
-        
+
         # Если успешно - используем (возможно очищенные) заголовки
         final_headers = validated
 

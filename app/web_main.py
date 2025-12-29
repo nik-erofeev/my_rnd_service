@@ -1,19 +1,18 @@
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse, RedirectResponse
-from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from app.core.config import CONFIG, EnvConfig
-from app.core.kafka_broker.brokers import broker
 
-# 
-from app.core.logger.logger import get_logger, setup_logger
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse, RedirectResponse
+
 from app.api.default.routers import router as default_router
 from app.api.example.routers import router as example_router
+from app.core.config import CONFIG, EnvConfig
+from app.core.kafka_broker.brokers import broker
+from app.core.logger.logger import get_logger, setup_logger
 
 setup_logger(CONFIG)
 logger = get_logger(__name__)
 
-# 
 
 def _init_routes(app: FastAPI) -> None:
     """Подключение всех роутеров к приложению.

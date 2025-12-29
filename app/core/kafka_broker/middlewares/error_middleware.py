@@ -5,10 +5,7 @@ from app.core.config import CONFIG
 from app.core.kafka_broker.schemas import CodeError, HeadersTopikOut, StatusCode
 from app.core.logger import get_logger
 from app.core.logger.context_storage import message_headers, message_key, reset_request_context
-# 
 from app.services.rag_service import RagService as Service
-# 
-
 
 logger = get_logger(__name__)
 

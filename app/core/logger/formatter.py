@@ -1,28 +1,22 @@
 import logging
-import sys
-from typing import ClassVar, Literal
-
-from colorama import Fore, Style
-
-# 
 import socket
+import sys
 import uuid
 from datetime import datetime, timezone
 from time import time
-from typing import Any
+from typing import Any, ClassVar, Literal
 
-from app.core.exceptions import BusinessException
-from rnd_connectors.fluent.schemas import ErrorType, FluentError
+from colorama import Fore, Style
+
+from app.core.logger.utils import is_valid_uuid
 from rnd_connectors.tslg.protocols import TSLGConfigProtocol
 from rnd_connectors.tslg.schemas import TSLGMsgSchemas
-from app.core.logger.utils import is_valid_uuid
-# 
-
 
 # Формат логирования
 LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - requestId: %(request_id)s - %(message)s"
 DEFAULT_LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+
 
 class ColoredFormatter(logging.Formatter):
     """Форматтер для цветного вывода в консоль."""
@@ -58,7 +52,6 @@ def create_formatter() -> logging.Formatter:
     return logging.Formatter(LOG_FORMAT, datefmt=DATE_FORMAT)
 
 
-# 
 class TslgFormatter(logging.Formatter):
     """Форматтер для преобразования LogRecord в JSON‑строку для TSLG Agent."""
 
@@ -157,4 +150,3 @@ class TslgFormatter(logging.Formatter):
 
         tslg_dict["timestamp"] = time()  # type: ignore
         tslg_dict["namespace"] = self.tslg_config.namespace
-# 

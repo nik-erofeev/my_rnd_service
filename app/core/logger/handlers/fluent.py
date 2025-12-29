@@ -13,7 +13,6 @@ from rnd_connectors.fluent.client import FluentdClient
 from rnd_connectors.fluent.protocols import FluentdConfigProtocol
 from rnd_connectors.fluent.schemas import FluentDBLog, FluentELKLog, FluentEvent, FluentExt, FluentMessage
 
-
 executor = ThreadPoolExecutor(max_workers=CONFIG.fluent.workers)
 atexit.register(executor.shutdown, wait=True)  # чтобы последние логи дошли
 

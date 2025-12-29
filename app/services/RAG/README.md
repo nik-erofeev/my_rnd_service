@@ -126,13 +126,13 @@ graph TD
     from rag_langchain.RAG.nodes.base.base_node import BaseNode
     from rag_langchain.RAG.state import RAGState
     from langchain_core.messages import AIMessage
-    
+
     class SafetyCheck(BaseNode):
         async def ainvoke(self, state: RAGState) -> RAGState:
             # Ваша логика проверки безопасности
             user_message = state.get("messages", [])[-1].content
             is_safe = self._check_safety(user_message)
-            
+
             if not is_safe:
                 return {
                     "messages": state["messages"] + [
@@ -140,7 +140,7 @@ graph TD
                     ]
                 }
             return state
-        
+
         def _check_safety(self, text: str) -> bool:
             # Реализация проверки безопасности
             return True
@@ -150,7 +150,7 @@ graph TD
     ```python
     # В rag_langchain/RAG/graph/builder.py
     from rag_langchain.RAG.nodes.safety.safety_check import SafetyCheck
-    
+
     # В методе build()
     safety = SafetyCheck()
     builder.add_node("Safety", safety.ainvoke)
@@ -169,14 +169,14 @@ CUSTOM_PROMPTS = {
     - FAQ: вопросы о продукте/сервисе
     - Support: технические проблемы
     - General: общие вопросы
-    
+
     Вопрос: {question}
     Намерение:
     """,
     "answer_generation": """
     Контекст: {context}
     Вопрос: {question}
-    
+
     Дай краткий и точный ответ на основе контекста.
     """
 }
@@ -282,15 +282,15 @@ async def simple_query():
     llm = AsyncLLM()
     graph_builder = RAGGraphBuilder(async_llm=llm, use_answer_checker=True)
     rag_pipeline = RAGPipeline(graph=graph_builder.build())
-    
+
     # Выполнение запроса
     result = await rag_pipeline.query(message="Что такое машинное обучение?")
-    
+
     # Получение ответа
     answer = result["messages"][-1].content
     intent = result.get("intent", "unknown")
     documents = result.get("retrieved", [])
-    
+
     print(f"Ответ: {answer}")
     print(f"Намерение: {intent}")
     print(f"Найдено документов: {len(documents)}")
@@ -306,13 +306,13 @@ async def batch_processing():
     llm = AsyncLLM()
     graph_builder = RAGGraphBuilder(async_llm=llm)
     rag_pipeline = RAGPipeline(graph=graph_builder.build())
-    
+
     questions = [
         "Как работает нейронная сеть?",
         "Что такое глубокое обучение?",
         "Объясни алгоритм градиентного спуска"
     ]
-    
+
     results = []
     for question in questions:
         result = await rag_pipeline.query(message=question)
@@ -321,7 +321,7 @@ async def batch_processing():
             "answer": result["messages"][-1].content,
             "intent": result.get("intent")
         })
-    
+
     return results
 ```
 
@@ -335,19 +335,19 @@ async def custom_config():
         temperature=0.3,
         max_tokens=500
     )
-    
+
     # Граф без проверки ответов
     graph_builder = RAGGraphBuilder(
-        async_llm=llm, 
+        async_llm=llm,
         use_answer_checker=False
     )
-    
+
     rag_pipeline = RAGPipeline(graph=graph_builder.build())
-    
+
     result = await rag_pipeline.query(
         message="Техническая документация по API"
     )
-    
+
     return result
 ```
 
@@ -362,14 +362,14 @@ from rag_langchain.example_service import ColoredFormatter
 def setup_detailed_logging():
     logger = logging.getLogger("rag_langchain")
     logger.setLevel(logging.DEBUG)
-    
+
     handler = logging.StreamHandler()
     formatter = ColoredFormatter(
         fmt="%(asctime)s - %(levelname)s - %(name)s:%(lineno)d - %(message)s"
     )
     handler.setFormatter(formatter)
     logger.addHandler(handler)
-    
+
     return logger
 ```
 
@@ -442,7 +442,7 @@ uv run python -c "import app.services.RAG.rag_pipeline; print('OK')"
 uv tree
 
 # debug
-uv run python -m pdb -m app.services.RAG.local_runner  
+uv run python -m pdb -m app.services.RAG.local_runner
 
 # Профилирование
 uv run python -m cProfile -m app.services.RAG.local_runner
@@ -463,7 +463,7 @@ uv run python -m cProfile -m app.services.RAG.local_runner
 
 Проект использует:
 - **Black** для форматирования
-- **isort** для сортировки импортов  
+- **isort** для сортировки импортов
 - **mypy** для проверки типов
 - **pre-commit** для автоматических проверок
 

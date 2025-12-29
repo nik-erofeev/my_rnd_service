@@ -32,7 +32,7 @@ class PrometheusConfig(Config):
 
     model_config = SettingsConfigDict(env_prefix="PROMETHEUS__")
 
-# 
+
 class APIConfig(Config):
     host: str
     port: int
@@ -49,8 +49,6 @@ class APIConfig(Config):
     model_config = SettingsConfigDict(env_prefix="API__")
 
 
-# 
-# 
 class ReadKafkaConfig(Config):
     bootstrap_servers: list[str]
     topic_in: str
@@ -86,8 +84,6 @@ class SSLKafkaConfig(Config):
     model_config = SettingsConfigDict(env_prefix="SSL_KAFKA__")
 
 
-# 
-# 
 class FluentConfig(Config):
     log_all: bool
     external_efk_enabled: bool
@@ -114,10 +110,6 @@ class FluentConfig(Config):
         return f"{self.index_prefix}__{self.app_name}"
 
 
-
-# 
-
-# 
 class TSLGConfig(Config):
     # Включение/выключение TSLG логирования
     tcp_enabled: bool
@@ -150,26 +142,19 @@ class TSLGConfig(Config):
     kafka_password: str
 
     model_config = SettingsConfigDict(env_prefix="TSLG__")
-# 
-
 
 
 class EnvConfig(Config):
     project: ProjectConfig = ProjectConfig()  # type: ignore[call-arg]
     prometheus: PrometheusConfig = PrometheusConfig()  # type: ignore[call-arg]
-    # 
     api: APIConfig = APIConfig()  # type: ignore[call-arg]
-    # 
-    # 
     read_kafka: ReadKafkaConfig = ReadKafkaConfig()  # type: ignore[call-arg]
     write_kafka: WriteKafkaConfig = WriteKafkaConfig()  # type: ignore[call-arg]
     ssl_kafka: SSLKafkaConfig = SSLKafkaConfig()  # type: ignore[call-arg]
-    # 
-    # 
     fluent: FluentConfig = FluentConfig()  # type: ignore[call-arg]
     tslg: TSLGConfig = TSLGConfig()  # type: ignore[call-arg]
-    # 
     log_level: str = "INFO"
     enable_colored_logs: bool = True  # Added here
+
 
 CONFIG = EnvConfig()

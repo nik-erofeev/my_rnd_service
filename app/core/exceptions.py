@@ -1,5 +1,5 @@
 """Реализация кастомных ошибок для сервиса."""
-# 
+
 
 class BusinessException(Exception):
     """
@@ -7,4 +7,3 @@ class BusinessException(Exception):
     """
 
     pass
-# 

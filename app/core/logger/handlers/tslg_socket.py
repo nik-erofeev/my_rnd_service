@@ -6,7 +6,6 @@ import uuid
 from datetime import datetime, timezone
 from logging.handlers import SocketHandler
 
-# 
 from app.core.logger.utils import is_valid_uuid
 from rnd_connectors.tslg.protocols import TSLGConfigProtocol
 from rnd_connectors.tslg.schemas import TSLGMsgSchemas
@@ -72,4 +71,3 @@ class TslgSocketHandler(SocketHandler):
         length_bin = struct.pack(">I", len(msg_encode_json))
 
         return length_bin + msg_encode_json
-# 

@@ -1,29 +1,22 @@
 # my_rnd_service/app/service_main.py
 from __future__ import annotations
-import logging
+
+from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Annotated, Any
 
-from faststream import FastStream, Depends, Context
-
-from app.core.config import CONFIG
-
-# 
-from app.services.rag_service import RagService
-# 
-from app.core.logger.logger import setup_logger, get_logger
-
-# 
-from app.core.kafka_broker.brokers import broker, registry
-from app.core.kafka_broker.schemas import LangchainConsumerMessage, LangchainProducerMessage
-# 
-from faststream.kafka import KafkaBroker
+from faststream import Context
 from faststream.asgi import AsgiFastStream, make_ping_asgi
 from prometheus_client import make_asgi_app
 
-# 
+from app.core.config import CONFIG
+from app.core.container import DependencyContainer
+from app.core.kafka_broker.brokers import broker, registry
+from app.core.kafka_broker.schemas import LangchainConsumerMessage, LangchainProducerMessage
+from app.core.logger.logger import get_logger, setup_logger
+from app.services.rag_service import RagService
+
 setup_logger(CONFIG)
-# 
 logger = get_logger(__name__)
 
 SERVICE_KEY = "service"
@@ -32,8 +25,7 @@ SERVICE_KEY = "service"
 # =============================================================================
 #  LIFESPAN
 # =============================================================================
-from contextlib import asynccontextmanager
-from app.core.container import DependencyContainer
+
 
 @asynccontextmanager
 async def lifespan():
@@ -59,7 +51,6 @@ async def lifespan():
         await container.aclose()
 
 
-# 
 @broker.subscriber(
     CONFIG.read_kafka.topic_in,
     group_id=CONFIG.read_kafka.group_id,
@@ -84,7 +75,6 @@ app = AsgiFastStream(
         ("/metrics", make_asgi_app(registry)),
     ],
 )
-# 
 
 
 # =============================================================================
@@ -116,7 +106,6 @@ if __name__ == "__main__":
     # uvicorn app.service_main:app --host 0.0.0.0 --port 8080 --log-level info # для теста - будут принтятся
 
     import uvicorn
-    import asyncio
 
     # asyncio.run(app.run())  # todo: debug
     # Запуск через uvicorn, так как это теперь ASGI приложение

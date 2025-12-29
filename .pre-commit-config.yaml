@@ -35,11 +35,11 @@ repos:
         args: [--line-length=120]
 
   - repo: https://github.com/pycqa/isort
-  rev: 5.13.2
-  hooks:
-    - id: isort
-      args: [ "--profile", "black", "--line-length", "120" ]
-  
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        args: [ "--profile", "black", "--line-length", "120" ]
+
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.8.1
     hooks:
