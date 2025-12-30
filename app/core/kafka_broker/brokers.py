@@ -1,6 +1,6 @@
 from faststream.kafka import KafkaBroker
 from faststream.kafka.prometheus import KafkaPrometheusMiddleware
-from prometheus_client import CollectorRegistry
+from app.services.prometheus_service import prometheus_service
 
 from app.core.config import CONFIG
 from app.core.kafka_broker.middlewares import (
@@ -15,7 +15,7 @@ from app.core.logger import get_logger
 logger = get_logger(__name__)
 
 # Общий реестр метрик для /metrics
-registry = CollectorRegistry()
+registry = prometheus_service.registry
 kafka_prometheus_middleware = KafkaPrometheusMiddleware(registry=registry)
 
 
