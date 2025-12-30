@@ -204,4 +204,6 @@ if __name__ == "__main__":
         port=CONFIG.api.port,
         reload=CONFIG.api.debug,
         log_level="info",  # Чтобы не переопределял логгер
+        # log_config=None,
+        # access_log=False,
     )
