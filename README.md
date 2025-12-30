@@ -1,5 +1,12 @@
-# RAG Pipeline (LangChain/LangGraph)
-## 📊 Мониторинг и дашборды (FastAPI / FastStream)
+#### RAG Pipeline (LangChain/LangGraph)
+### 📊 Мониторинг и дашборды (FastAPI / FastStream)
+
+доп - может понадобиться
+```bash
+curl -s http://localhost:3100/loki/api/v1/label/app_name/values | jq
+curl -s http://localhost:3100/loki/api/v1/labels | jq
+
+```
 
 В проекте используется стек **Grafana + Prometheus + Loki**:
 
