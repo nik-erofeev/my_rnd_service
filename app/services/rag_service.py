@@ -17,12 +17,15 @@ from app.services.RAG.rag_pipeline.state import RAGState
 logger = logging.getLogger(__name__)
 
 
+from langsmith import traceable
+
 class RagService:
     """Сервис, использующий RAG-пайплайн (LangChain адаптер)."""
 
     def __init__(self, pipeline: RAGPipeline) -> None:
         self.pipeline = pipeline
 
+    @traceable(run_type="chain", name="Handle Kafka Message")
     async def handle_message(
         self,
         body: LangchainConsumerMessage,

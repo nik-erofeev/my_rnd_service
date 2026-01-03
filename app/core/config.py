@@ -144,6 +144,16 @@ class TSLGConfig(Config):
     model_config = SettingsConfigDict(env_prefix="TSLG__")
 
 
+
+class LangChainConfig(Config):
+    tracing_v2: bool = False
+    api_key: str | None = None
+    project: str = "default"
+    endpoint: str = "https://api.smith.langchain.com"
+
+    model_config = SettingsConfigDict(env_prefix="LANGCHAIN__")
+
+
 class EnvConfig(Config):
     project: ProjectConfig = ProjectConfig()  # type: ignore[call-arg]
     prometheus: PrometheusConfig = PrometheusConfig()  # type: ignore[call-arg]
@@ -153,8 +163,18 @@ class EnvConfig(Config):
     ssl_kafka: SSLKafkaConfig = SSLKafkaConfig()  # type: ignore[call-arg]
     fluent: FluentConfig = FluentConfig()  # type: ignore[call-arg]
     tslg: TSLGConfig = TSLGConfig()  # type: ignore[call-arg]
+    langchain: LangChainConfig = LangChainConfig()  # type: ignore[call-arg]
     log_level: str = "INFO"
     enable_colored_logs: bool = True  # Added here
 
 
+
 CONFIG = EnvConfig()
+
+# Export LangChain settings to environment variables for the SDK
+if CONFIG.langchain.api_key:
+    import os
+    os.environ["LANGCHAIN_TRACING_V2"] = str(CONFIG.langchain.tracing_v2).lower()
+    os.environ["LANGCHAIN_API_KEY"] = CONFIG.langchain.api_key
+    os.environ["LANGCHAIN_PROJECT"] = CONFIG.langchain.project
+    os.environ["LANGCHAIN_ENDPOINT"] = CONFIG.langchain.endpoint
