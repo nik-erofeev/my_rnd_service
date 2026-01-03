@@ -1,6 +1,5 @@
 from faststream.kafka import KafkaBroker
 from faststream.kafka.prometheus import KafkaPrometheusMiddleware
-from app.services.prometheus_service import prometheus_service
 
 from app.core.config import CONFIG
 from app.core.kafka_broker.middlewares import (
@@ -11,6 +10,7 @@ from app.core.kafka_broker.middlewares import (
 )
 from app.core.kafka_broker.utils.ssl_config import ssl_and_update_broker_kwargs
 from app.core.logger import get_logger
+from app.services.prometheus_service import prometheus_service
 
 logger = get_logger(__name__)
 

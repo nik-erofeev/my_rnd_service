@@ -144,12 +144,11 @@ class TSLGConfig(Config):
     model_config = SettingsConfigDict(env_prefix="TSLG__")
 
 
-
 class SmithLangChainConfig(Config):
-    tracing_v2: bool #= False
+    tracing_v2: bool  # = False
     api_key: str | None = None
-    project: str #= "default"
-    endpoint: str #= "https://api.smith.langchain.com"
+    project: str  # = "default"
+    endpoint: str  # = "https://api.smith.langchain.com"
 
     model_config = SettingsConfigDict(env_prefix="SMITH__")
 
@@ -168,12 +167,12 @@ class EnvConfig(Config):
     enable_colored_logs: bool = True  # Added here
 
 
-
 CONFIG = EnvConfig()
 
 # # Export LangChain settings to environment variables for the SDK
 if CONFIG.smith.api_key:
     import os
+
     # нужны конкретно эти переменные, иначе не дойдет
     os.environ["LANGCHAIN_TRACING_V2"] = str(CONFIG.smith.tracing_v2).lower()
     os.environ["LANGCHAIN_API_KEY"] = CONFIG.smith.api_key

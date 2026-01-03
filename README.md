@@ -26,7 +26,7 @@ curl -s http://localhost:3100/loki/api/v1/labels | jq
 4. Нажать **Import**
 
 
-Для логирования FastAPI используется **Loki**.  
+Для логирования FastAPI используется **Loki**.
 Логи фильтруются по label `compose_service`.
 
 В Grafana **поправить два дашборда**.

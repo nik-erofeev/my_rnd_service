@@ -3,6 +3,8 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from langsmith import traceable
+
 from app.core.kafka_broker.schemas import (
     ERROR_TRACES,
     CodeError,
@@ -16,8 +18,6 @@ from app.services.RAG.rag_pipeline.state import RAGState
 
 logger = logging.getLogger(__name__)
 
-
-from langsmith import traceable
 
 class RagService:
     """Сервис, использующий RAG-пайплайн (LangChain адаптер)."""
