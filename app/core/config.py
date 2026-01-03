@@ -145,13 +145,13 @@ class TSLGConfig(Config):
 
 
 
-class LangChainConfig(Config):
-    tracing_v2: bool = False
+class SmithLangChainConfig(Config):
+    tracing_v2: bool #= False
     api_key: str | None = None
-    project: str = "default"
-    endpoint: str = "https://api.smith.langchain.com"
+    project: str #= "default"
+    endpoint: str #= "https://api.smith.langchain.com"
 
-    model_config = SettingsConfigDict(env_prefix="LANGCHAIN__")
+    model_config = SettingsConfigDict(env_prefix="SMITH__")
 
 
 class EnvConfig(Config):
@@ -163,7 +163,7 @@ class EnvConfig(Config):
     ssl_kafka: SSLKafkaConfig = SSLKafkaConfig()  # type: ignore[call-arg]
     fluent: FluentConfig = FluentConfig()  # type: ignore[call-arg]
     tslg: TSLGConfig = TSLGConfig()  # type: ignore[call-arg]
-    langchain: LangChainConfig = LangChainConfig()  # type: ignore[call-arg]
+    smith: SmithLangChainConfig = SmithLangChainConfig()  # type: ignore[call-arg]
     log_level: str = "INFO"
     enable_colored_logs: bool = True  # Added here
 
@@ -172,10 +172,10 @@ class EnvConfig(Config):
 CONFIG = EnvConfig()
 
 # # Export LangChain settings to environment variables for the SDK
-# нужны конкретно эти переменные
-if CONFIG.langchain.api_key:
+if CONFIG.smith.api_key:
     import os
-    os.environ["LANGCHAIN_TRACING_V2"] = str(CONFIG.langchain.tracing_v2).lower()
-    os.environ["LANGCHAIN_API_KEY"] = CONFIG.langchain.api_key
-    os.environ["LANGCHAIN_PROJECT"] = CONFIG.langchain.project
-    os.environ["LANGCHAIN_ENDPOINT"] = CONFIG.langchain.endpoint
+    # нужны конкретно эти переменные, иначе не дойдет
+    os.environ["LANGCHAIN_TRACING_V2"] = str(CONFIG.smith.tracing_v2).lower()
+    os.environ["LANGCHAIN_API_KEY"] = CONFIG.smith.api_key
+    os.environ["LANGCHAIN_PROJECT"] = CONFIG.smith.project
+    os.environ["LANGCHAIN_ENDPOINT"] = CONFIG.smith.endpoint
