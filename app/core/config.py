@@ -171,7 +171,8 @@ class EnvConfig(Config):
 
 CONFIG = EnvConfig()
 
-# Export LangChain settings to environment variables for the SDK
+# # Export LangChain settings to environment variables for the SDK
+# нужны конкретно эти переменные
 if CONFIG.langchain.api_key:
     import os
     os.environ["LANGCHAIN_TRACING_V2"] = str(CONFIG.langchain.tracing_v2).lower()
