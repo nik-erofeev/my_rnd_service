@@ -3,8 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from langsmith import traceable
-
+from ___check.langfuse import handler
 from app.core.kafka_broker.schemas import (
     ERROR_TRACES,
     CodeError,
@@ -25,7 +24,8 @@ class RagService:
     def __init__(self, pipeline: RAGPipeline) -> None:
         self.pipeline = pipeline
 
-    @traceable(run_type="chain", name="Handle Kafka Message")
+    # from langsmith import traceable
+    # @traceable(run_type="chain", name="Handle Kafka Message")
     async def handle_message(
         self,
         body: LangchainConsumerMessage,
@@ -36,8 +36,11 @@ class RagService:
         Обрабатывает входящее сообщение через LangChain граф.
         """
         logger.info("Начало обработки сообщения через LangChain RAG")
-        # Вызов асинхронного query
-        state: RAGState = await self.pipeline.query(body.test_questions)
+
+        state: RAGState = await self.pipeline.query(
+            body.test_questions,
+            callbacks=[handler],
+        )
 
         # Извлечение ответа из state
         messages = state.get("messages", [])

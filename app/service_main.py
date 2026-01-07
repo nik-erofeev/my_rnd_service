@@ -38,7 +38,7 @@ async def lifespan():
     container = DependencyContainer(config=CONFIG)
 
     await container.init_async()
-    service_instance: RagService = container.build_service()
+    service_instance = container.build_service()
 
     # Сохраняем сервис в контекст приложения
     app.context.set_global(SERVICE_KEY, service_instance)

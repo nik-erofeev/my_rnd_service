@@ -24,11 +24,12 @@ class RAGPipeline:
 
         self.graph = graph
 
-    async def query(self, message: str) -> RAGState:
+    async def query(self, message: str, callbacks=None) -> RAGState:
         """Выполняет RAG-запрос по входному сообщению."""
         try:
             config = RunnableConfig(
                 configurable={"request_id": randint(1, 100)},
+                callbacks=callbacks or [],
             )
             with torch.no_grad():
                 result: RAGState = await self.graph.ainvoke(
@@ -37,7 +38,7 @@ class RAGPipeline:
                         "intent": [],
                         "retrieved": [],
                     },
-                    config,
+                    config=config,
                 )
                 return result
         except RagPipelineError:

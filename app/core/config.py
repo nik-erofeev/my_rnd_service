@@ -1,4 +1,5 @@
 from dotenv import find_dotenv
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -145,12 +146,17 @@ class TSLGConfig(Config):
 
 
 class SmithLangChainConfig(Config):
-    tracing_v2: bool  # = False
-    api_key: str | None = None
-    project: str  # = "default"
-    endpoint: str  # = "https://api.smith.langchain.com"
+    # https://smith.langchain.com/settings
+    tracing_v2: bool = Field(default=True, alias="LANGCHAIN_TRACING_V2")
+    api_key: str = Field(..., alias="LANGCHAIN_API_KEY")
+    project: str = Field(..., alias="LANGCHAIN_PROJECT")
+    endpoint: str = Field(default="https://api.smith.langchain.com", alias="LANGCHAIN_ENDPOINT")
 
-    model_config = SettingsConfigDict(env_prefix="SMITH__")
+
+class LangfuseConfig(Config):
+    secret_key: str = Field(..., alias="LANGFUSE_SECRET_KEY")
+    public_key: str = Field(..., alias="LANGFUSE_PUBLIC_KEY")
+    base_url: str = Field(..., alias="LANGFUSE_BASE_URL")
 
 
 class EnvConfig(Config):
@@ -162,19 +168,27 @@ class EnvConfig(Config):
     ssl_kafka: SSLKafkaConfig = SSLKafkaConfig()  # type: ignore[call-arg]
     fluent: FluentConfig = FluentConfig()  # type: ignore[call-arg]
     tslg: TSLGConfig = TSLGConfig()  # type: ignore[call-arg]
-    smith: SmithLangChainConfig = SmithLangChainConfig()  # type: ignore[call-arg]
+    # smith: SmithLangChainConfig = SmithLangChainConfig()  # type: ignore[call-arg]
+    langfuse: LangfuseConfig = LangfuseConfig()  # type: ignore[call-arg]
     log_level: str = "INFO"
     enable_colored_logs: bool = True  # Added here
 
 
 CONFIG = EnvConfig()
 
-# # Export LangChain settings to environment variables for the SDK
-if CONFIG.smith.api_key:
+# нужны конкретно эти переменные, иначе не дойдет
+# if CONFIG.smith.api_key:
+#     import os
+#
+#     os.environ["LANGCHAIN_TRACING_V2"] = str(CONFIG.smith.tracing_v2).lower()
+#     os.environ["LANGCHAIN_API_KEY"] = CONFIG.smith.api_key
+#     os.environ["LANGCHAIN_PROJECT"] = CONFIG.smith.project
+#     os.environ["LANGCHAIN_ENDPOINT"] = CONFIG.smith.endpoint
+
+if CONFIG.langfuse.secret_key:
     import os
 
-    # нужны конкретно эти переменные, иначе не дойдет
-    os.environ["LANGCHAIN_TRACING_V2"] = str(CONFIG.smith.tracing_v2).lower()
-    os.environ["LANGCHAIN_API_KEY"] = CONFIG.smith.api_key
-    os.environ["LANGCHAIN_PROJECT"] = CONFIG.smith.project
-    os.environ["LANGCHAIN_ENDPOINT"] = CONFIG.smith.endpoint
+    # langfuse
+    os.environ["LANGFUSE_SECRET_KEY"] = CONFIG.langfuse.secret_key
+    os.environ["LANGFUSE_PUBLIC_KEY"] = CONFIG.langfuse.public_key
+    os.environ["LANGFUSE_BASE_URL"] = CONFIG.langfuse.base_url
