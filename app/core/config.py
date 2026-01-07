@@ -157,6 +157,7 @@ class LangfuseConfig(Config):
     secret_key: str = Field(..., alias="LANGFUSE_SECRET_KEY")
     public_key: str = Field(..., alias="LANGFUSE_PUBLIC_KEY")
     base_url: str = Field(..., alias="LANGFUSE_BASE_URL")
+    enable: bool = True
 
 
 class EnvConfig(Config):
@@ -168,16 +169,17 @@ class EnvConfig(Config):
     ssl_kafka: SSLKafkaConfig = SSLKafkaConfig()  # type: ignore[call-arg]
     fluent: FluentConfig = FluentConfig()  # type: ignore[call-arg]
     tslg: TSLGConfig = TSLGConfig()  # type: ignore[call-arg]
-    # smith: SmithLangChainConfig = SmithLangChainConfig()  # type: ignore[call-arg]
-    langfuse: LangfuseConfig = LangfuseConfig()  # type: ignore[call-arg]
     log_level: str = "INFO"
     enable_colored_logs: bool = True  # Added here
+
+    langfuse: LangfuseConfig = LangfuseConfig()  # type: ignore[call-arg]
+    smith: SmithLangChainConfig = SmithLangChainConfig()  # type: ignore[call-arg]
 
 
 CONFIG = EnvConfig()
 
-# нужны конкретно эти переменные, иначе не дойдет
-# if CONFIG.smith.api_key:
+# # нужны конкретно эти переменные, иначе не дойдет
+# if CONFIG.smith.tracing_v2:  # enable
 #     import os
 #
 #     os.environ["LANGCHAIN_TRACING_V2"] = str(CONFIG.smith.tracing_v2).lower()
@@ -185,7 +187,7 @@ CONFIG = EnvConfig()
 #     os.environ["LANGCHAIN_PROJECT"] = CONFIG.smith.project
 #     os.environ["LANGCHAIN_ENDPOINT"] = CONFIG.smith.endpoint
 
-if CONFIG.langfuse.secret_key:
+if CONFIG.langfuse.enable:
     import os
 
     # langfuse

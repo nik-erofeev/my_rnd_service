@@ -24,7 +24,11 @@ class RAGPipeline:
 
         self.graph = graph
 
-    async def query(self, message: str, callbacks=None) -> RAGState:
+    async def query(
+        self,
+        message: str,
+        callbacks=None,
+    ) -> RAGState:
         """Выполняет RAG-запрос по входному сообщению."""
         try:
             config = RunnableConfig(
