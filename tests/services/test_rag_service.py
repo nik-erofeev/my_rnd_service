@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, Mock
 import pytest
 
 from app.core.kafka_broker.schemas import LangchainConsumerMessage, LangchainProducerMessage, StatusCode
+from ___check.langfuse import handler
 from app.services.rag_service import RagService
 
 
@@ -46,7 +47,7 @@ async def test_rag_service_handle_message_success(
     result = await rag_service.handle_message(body=body, headers=headers, key=key)
 
     # Проверяем, что pipeline.query был вызван с переданным вопросом
-    mock_pipeline.query.assert_called_once_with(question)
+    mock_pipeline.query.assert_called_once_with(question, callbacks=[handler])
 
     # Вариант 1: Проверка всего объекта
     assert result == LangchainProducerMessage(message=expected_answer, statusCode=StatusCode.SUCCESS)
