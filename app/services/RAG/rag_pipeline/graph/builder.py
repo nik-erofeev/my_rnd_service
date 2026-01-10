@@ -1,5 +1,6 @@
 import logging
 
+from IPython.display import Image, display
 from langgraph.constants import END, START
 from langgraph.graph import StateGraph
 
@@ -30,44 +31,51 @@ class RAGGraphBuilder:
         self.async_llm = async_llm
         self.use_answer_checker = use_answer_checker
         self.prompt_manager = PromptManager()
+        self._compiled_graph = None
+        self._builder: StateGraph | None = None
 
-    def build(self):
-        """Собирает и компилирует граф состояний.
-
-
-        Returns:
-            Скомпилированный исполняемый граф.
-        """
+    def _build_graph(self) -> StateGraph:
+        """Создаёт и конфигурирует StateGraph (внутренний метод)."""
         logger.info("🛠️ Начало построения RAG-графа...")
 
         logger.info("Инициализация узла DocsCounter...")
-        # 🔹 Узел маршрутизации по числу найденных документов
+        # 🔹 Функция маршрутизации: проверяет, найдены ли документы
+        # Возвращает "stop" (END) если документов нет, или "next_step" для продолжения
         router = DocsCounter()
 
-        # Узлы пайплайна
+        # ===== УЗЛЫ ОБРАБОТКИ =====
+        # Узлы должны возвращать dict для обновления state
+        # Если узел не меняет state, он может вернуть пустой dict {}
         llm = BaseLLM(
             llm=self.async_llm,
             prompt=self.prompt_manager.get_prompt("BaseLLM"),
         )
 
         logger.info("Инициализация узла IntentClassifier...")
+        # Узел классификации намерения: анализирует запрос пользователя
+        # Возвращает: {"intent": str, ...} (обновляет поле intent в state)
         intent = IntentClassifier(
             llm=self.async_llm,
             prompt=self.prompt_manager.get_prompt("Classifier"),
         )
 
         logger.info("Инициализация узла RetrieverIntent...")
+        # Узел поиска документов: переформулирует запрос и ищет в VectorDB
+        # Возвращает: {"retrieved": list[str], ...} (добавляет найденные документы в state)
         retriever = RetrieverIntent(
             llm=self.async_llm,
             prompt=self.prompt_manager.get_prompt("Retriever"),
         )
 
         logger.info("Инициализация узла Reranker реранкера...")
+        # Узел переранжирования: улучшает релевантность документов
+        # Возвращает: {"retrieved": list[str], ...} (обновляет documents в state)
         reranker = Reranker()
 
         ans_check = None
         if self.use_answer_checker:
             logger.info("Инициализация узла проверки ответа (AnswerChecker)")
+            # Узел проверки ответа: проверяет качество и релевантность ответа
             ans_check = AnswerChecker(
                 llm=self.async_llm,
                 prompt=self.prompt_manager.get_prompt("AnswerChecker"),
@@ -76,52 +84,68 @@ class RAGGraphBuilder:
         logger.info("Сборка графа состояний...")
         builder = StateGraph(RAGState)
 
-        # Добавление узлов
-        builder.add_node("Intent", intent.ainvoke)  # intent
-        builder.add_node("Retriever", retriever.ainvoke)
-        builder.add_node("Router", router.ainvoke)
-        builder.add_node("Reranker", reranker.ainvoke)
-        builder.add_node("llm", llm.ainvoke)
+        # ===== ДОБАВЛЕНИЕ УЗЛОВ =====
+        # Каждый узел должен быть асинхронной функцией (ainvoke)
+        # и возвращать dict для обновления RAGState
+        builder.add_node("Intent", intent.ainvoke)  # Классификация намерения
+        builder.add_node("Retriever", retriever.ainvoke)  # Поиск документов
+        # ⚠️ Router НЕ добавляется как узел! Используется только в add_conditional_edges
+
+        builder.add_node("Reranker", reranker.ainvoke)  # Переранжирование документов
+        builder.add_node("llm", llm.ainvoke)  # Генерация ответа
 
         if self.use_answer_checker and ans_check is not None:
-            builder.add_node("AnswerChecker", ans_check.ainvoke)
+            builder.add_node("AnswerChecker", ans_check.ainvoke)  # Проверка ответа
 
-        # 🔹 Структура графа
-        builder.add_edge(START, "Intent")
-        builder.add_edge("Intent", "Retriever")
+        # ===== ОПРЕДЕЛЕНИЕ РЁБЕР (ПЕРЕХОДОВ) =====
+        # add_edge: безусловный переход в следующий узел
+        # add_conditional_edges: условный переход в зависимости от функции маршрутизации
+        builder.add_edge(START, "Intent")  # Начало → Классификация намерения
+        builder.add_edge("Intent", "Retriever")  # Намерение → Поиск документов
 
-        # 🔹 Маршрутизатор: если документов нет — стоп, если есть — продолжаем
+        # 🔹 УСЛОВНЫЙ ПЕРЕХОД (Router):
+        # router.ainvoke() возвращает:
+        #   - "stop" → переход в END (нет документов)
+        #   - "next_step" → переход в Reranker (документы найдены)
         builder.add_conditional_edges(
-            "Retriever",
-            router.ainvoke,
-            {
-                "stop": END,
-                "next_step": "Reranker",
+            "Retriever",  # От этого узла
+            router.ainvoke,  # Используй эту функцию для принятия решения
+            {  # Маршруты (ключ = возвращаемое значение → узел/END)
+                "stop": END,  # Нет документов → конец
+                "next_step": "Reranker",  # Документы найдены → переранжирование
             },
         )
 
-        builder.add_edge("Reranker", "llm")
+        builder.add_edge("Reranker", "llm")  # Переранжирование → Генерация ответа
 
-        # Завершение графа
+        # ===== ЗАВЕРШЕНИЕ ГРАФА =====
+        # Выбор пути в зависимости от использования проверки ответа
         if self.use_answer_checker and ans_check is not None:
-            builder.add_edge("llm", "AnswerChecker")
-            builder.add_edge("AnswerChecker", END)
-            # builder.add_edge("irrelevant_input", END)  # irrelevant_input тоже ведет в END
+            builder.add_edge("llm", "AnswerChecker")  # Ответ → Проверка ответа
+            builder.add_edge("AnswerChecker", END)  # Проверка → Конец
             logger.info("✅ Граф построен с узлом AnswerChecker")
         else:
-            builder.add_edge("llm", END)
-            # builder.add_edge("irrelevant_input", END)  # irrelevant_input тоже ведет в END
+            builder.add_edge("llm", END)  # Ответ → Конец (без проверки)
             logger.info("✅ Граф построен без узла AnswerChecker")
 
-        compiled_graph = builder.compile()
-        logger.info("🎉 RAG-граф успешно скомпилирован и готов к использованию")
-        return compiled_graph
+        return builder
+
+    def build(self):
+        """Возвращает скомпилированный граф (ленивая инициализация)."""
+        if self._compiled_graph is None:
+            self._builder = self._build_graph()
+            self._compiled_graph = self._builder.compile()
+            logger.info("🎉 RAG-граф успешно скомпилирован и готов к использованию")
+        return self._compiled_graph
+
+    def get_graph_builder(self) -> StateGraph:
+        """Возвращает StateGraph builder для визуализации и отладки."""
+        if self._builder is None:
+            self._builder = self._build_graph()
+        return self._builder
 
     def get_image_graph(self):
-        """
-        Отрисовать график
-        """
-        from IPython.display import Image, display
+        """Отрисовать граф (использует builder напрямую)."""
 
-        graph = self.build()
-        return display(Image(graph.get_graph().draw_mermaid_png()))
+        builder = self.get_graph_builder()
+        return display(Image(builder.compile().get_graph().draw_mermaid_png()))

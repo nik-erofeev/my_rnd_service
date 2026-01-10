@@ -1,8 +1,8 @@
 import json
 import logging
 
-from ..exceptions import RagPipelineError
-from .schemas import AlternativesSchema, MessageSchema, ResponseYAGPTSchema
+from app.services.RAG.exceptions import RagPipelineError
+from app.services.RAG.llm.schemas import AlternativesSchema, MessageSchema, ResponseYAGPTSchema
 
 logger = logging.getLogger(__name__)
 

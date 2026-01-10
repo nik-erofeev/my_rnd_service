@@ -18,6 +18,7 @@ class DependencyContainer:
     def __init__(self, config: EnvConfig):
         self.config = config
         self._llm: AsyncLLM | None = None
+        self._graph_builder: RAGGraphBuilder | None = None
         self._pipeline: RAGPipeline | None = None
         self._service: RagService | None = None
 
@@ -25,6 +26,7 @@ class DependencyContainer:
 
     @property
     def llm(self) -> AsyncLLM:
+        """Инициализация LLM."""
         if self._llm is None:
             logger.info("🔧 Инициализация LLM...")
             # Здесь можно передать конфиг в LLM если нужно
@@ -33,16 +35,28 @@ class DependencyContainer:
         return self._llm
 
     @property
+    def graph_builder(self) -> RAGGraphBuilder:
+        """Возвращает RAGGraphBuilder для доступа к методам build, get_image_graph и т.д."""
+        if self._graph_builder is None:
+            logger.info("🔧 Создание RAGGraphBuilder...")
+            self._graph_builder = RAGGraphBuilder(async_llm=self.llm, use_answer_checker=True)
+            logger.info("✅ RAGGraphBuilder создан")
+        return self._graph_builder
+
+    @property
     def pipeline(self) -> RAGPipeline:
+        """Инициализация RAG Pipeline с скомпилированным графом."""
         if self._pipeline is None:
             logger.info("🔧 Сборка RAG графа...")
-            graph_builder = RAGGraphBuilder(async_llm=self.llm, use_answer_checker=True)
-            self._pipeline = RAGPipeline(graph=graph_builder.build())
+            # builder для получения скомпилированного графа
+            compiled_graph = self.graph_builder.build()
+            self._pipeline = RAGPipeline(graph=compiled_graph)
             logger.info("✅ RAG граф собран")
         return self._pipeline
 
     @property
     def service(self) -> RagService:
+        """Инициализация RAG Service."""
         if self._service is None:
             logger.info("🚀 Сборка RAG сервиса...")
             self._service = RagService(pipeline=self.pipeline)
@@ -53,11 +67,12 @@ class DependencyContainer:
 
     async def init_async(self) -> None:
         """Асинхронная инициализация ресурсов."""
-        # Пример: проверка соединения с LLM или VectorDB
         logger.info("🔧 Асинхронная инициализация ресурсов...")
-        pass
+        # Пример: проверка соединения с LLM или VectorDB
+        _ = self.service  # Принудительно инициализировать весь граф
 
     def build_service(self) -> RagService:
+        """Возвращает готовый RagService."""
         return self.service
 
     async def aclose(self) -> None:
