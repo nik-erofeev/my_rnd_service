@@ -116,3 +116,12 @@ class RAGGraphBuilder:
         compiled_graph = builder.compile()
         logger.info("🎉 RAG-граф успешно скомпилирован и готов к использованию")
         return compiled_graph
+
+    def get_image_graph(self):
+        """
+        Отрисовать график
+        """
+        from IPython.display import Image, display
+
+        graph = self.build()
+        return display(Image(graph.get_graph().draw_mermaid_png()))
