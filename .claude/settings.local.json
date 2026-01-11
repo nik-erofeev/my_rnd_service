@@ -1,0 +1,10 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "command": "cd /Users/Nik/Desktop/example/my_rnd_service && source .venv/bin/activate && pre-commit run --files \"$CLAUDE_FILE_PATH\""
+      }
+    ]
+  }
+}
