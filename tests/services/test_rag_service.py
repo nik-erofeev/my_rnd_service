@@ -3,8 +3,8 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 
-from app.core.kafka_broker.schemas import LangchainConsumerMessage, LangchainProducerMessage, StatusCode
 from ___check.langfuse import handler
+from app.core.kafka_broker.schemas import LangchainConsumerMessage, LangchainProducerMessage, StatusCode
 from app.services.rag_service import RagService
 
 

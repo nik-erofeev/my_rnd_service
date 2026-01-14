@@ -104,7 +104,10 @@ def generate_message():
         # "asd": "123",
     }
 
-    msg = {"test_questions": "какая погода в Москве?"}
+    # query = "какая погода в Москве?"
+    query = "Какие документы нужны для оформления ипотеки?"
+
+    msg = {"test_questions": query}
 
     return msg, headers
 

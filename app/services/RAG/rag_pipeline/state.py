@@ -19,3 +19,4 @@ class RAGState(TypedDict, total=False):
     messages: Annotated[list[BaseMessage], add_messages]
     retrieved: list[Any]
     intent: Annotated[list[BaseMessage], add_messages]
+    # additional_data: dict # для примера хранить фильтр- передавать в раг-пайплайне

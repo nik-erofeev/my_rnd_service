@@ -1,9 +1,13 @@
 import logging
 
 from IPython.display import Image, display
+
+# from langchain_community.vectorstores import OpenSearchVectorSearch
+# from langchain_huggingface import HuggingFaceEmbeddings
 from langgraph.constants import END, START
 from langgraph.graph import StateGraph
 
+from app.core.config import RagConfig
 from app.services.RAG.llm.llm import AsyncLLM
 from app.services.RAG.rag_pipeline.nodes.base.base_llm import BaseLLM
 from app.services.RAG.rag_pipeline.nodes.postprocessing.answer_checker import AnswerChecker
@@ -20,16 +24,21 @@ logger = logging.getLogger(__name__)
 class RAGGraphBuilder:
     """Строит LangGraph-граф для RAG-пайплайна."""
 
-    def __init__(self, async_llm: AsyncLLM, use_answer_checker: bool = True):
+    def __init__(
+        self,
+        async_llm: AsyncLLM,
+        rag_config: RagConfig,
+        # opensearch: OpenSearchVectorSearch,
+        # embedding_model: HuggingFaceEmbeddings,
+    ):
         """
         Инициализирует строитель графа.
-
-        Args:
-            async_llm (AsyncLLM): Экземпляр асинхронной LLM для использования в узлах.
-            use_answer_checker (bool, optional): Включать ли узел проверки ответа. По умолчанию True.
         """
         self.async_llm = async_llm
-        self.use_answer_checker = use_answer_checker
+        self.rag_config = rag_config
+        self.use_answer_checker = self.rag_config.use_answer_checker
+        # self.opensearch = opensearch
+        # self.embedding_model = embedding_model
         self.prompt_manager = PromptManager()
         self._compiled_graph = None
         self._builder: StateGraph | None = None
@@ -65,6 +74,13 @@ class RAGGraphBuilder:
         retriever = RetrieverIntent(
             llm=self.async_llm,
             prompt=self.prompt_manager.get_prompt("Retriever"),
+            # opensearch=self.opensearch,
+            # embedding_model=self.embedding_model,
+            # k=self.rag_config.k,
+            # n=self.rag_config.n,
+            # relevance_threshold=self.rag_config.relevance_threshold,
+            # use_hybrid_search=self.rag_config.use_hybrid_search,
+            # bm25_weight=self.rag_config.bm25_weight,
         )
 
         logger.info("Инициализация узла Reranker реранкера...")

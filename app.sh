@@ -36,9 +36,9 @@ sleep 5
 echo "🚀 Starting FastStream server..."
 # FASTSTREAM (uvicorn)  probes
 # exec uvicorn app.service_main:app --host 0.0.0.0 --port 8080 --log-level info
-# exec uvicorn app.service_main:app --host 0.0.0.0 --port 8080 --log-level warning
+exec uvicorn app.service_main:app --host 0.0.0.0 --port 8080 --log-level warning
 # FASTSTREAM cli
 # exec faststream run app.service_main:app --host 0.0.0.0 --port 8080
 
 # API
-exec uvicorn app.web_main:app --host 0.0.0.0 --port 8080
+# exec uvicorn app.web_main:app --host 0.0.0.0 --port 8080

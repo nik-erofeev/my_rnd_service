@@ -160,7 +160,96 @@ class LangfuseConfig(Config):
     enable: bool = True
 
 
+# ─────────── RND TOKEN MANAGER ───────────
+class RNDTokenManagerConfig(Config):
+    login: str
+    password: str
+    url: str
+    verify: bool = False
+
+    model_config = SettingsConfigDict(env_prefix="RND_TOKEN__")
+
+
+# ─────────── YANDEX / LLM  ───────────
+class RNDYandexConfig(Config):
+    api_url: str
+    folder_id: str
+    model: str
+    temperature: float
+    max_tokens: int
+    use_ssl: bool = False
+    stream: bool = False
+    reasoning_mode: str | None = None
+
+    model_config = SettingsConfigDict(env_prefix="RND_YANDEX__")
+
+
+# ─────────── TYK / LLM  ───────────
+class TYKYandexConfig(Config):
+    api_url: str
+    folder_id: str
+    model: str
+    temperature: float
+    max_tokens: int
+    use_ssl: bool = False
+
+    use_tyk: bool = False
+
+    model_config = SettingsConfigDict(env_prefix="TYK_YANDEX__")
+
+
+# ─────────── EPA TOKEN ───────────
+class EPATokenManagerConfig(Config):
+    login: str
+    password: str
+    url: str
+    verify: bool = False
+
+    model_config = SettingsConfigDict(env_prefix="EPA_TOKEN__")
+
+
+class RagConfig(Config):
+    # Параметры MultiQuery Ensemble Retriever
+    n: int  # Сколько раз LLM переформулирует запрос
+    k: int  # Документов от векторного поиска на каждый переформулированный запрос
+    relevance_threshold: float  # = 0.55 # Порог релевантности для векторного поиска
+    use_hybrid_search: bool  # = True  # гибридный поиск (True = векторный + BM25)
+    bm25_weight: float  # = 0.55  # вес BM25 в гибридном поиске
+    use_answer_checker: bool  # = False
+    n_best: int  # Количество лучших результатов для реранкера
+
+    model_config = SettingsConfigDict(env_prefix="RAG__")
+
+
+# ─────────── EMBEDDING ───────────
+class EmbeddingConfig(Config):
+    model: str
+    device: str  # "cuda" | "mps" | "cpu"
+
+    model_config = SettingsConfigDict(env_prefix="EMBEDDING__")
+
+
+# ─────────── OPENSEARCH ───────────
+class OpenSearchConfig(Config):
+    url: str
+    index_name: str
+    login: str
+    password: str
+
+    model_config = SettingsConfigDict(env_prefix="OPENSEARCH__")
+
+
 class EnvConfig(Config):
+    # LLM
+    tyk_yandex_config: TYKYandexConfig = TYKYandexConfig()  # type: ignore[call-arg]
+    epa_token: EPATokenManagerConfig = EPATokenManagerConfig()  # type: ignore[call-arg]
+    rnd_yandex_config: RNDYandexConfig = RNDYandexConfig()  # type: ignore[call-arg]
+    rnd_token_manager_config: RNDTokenManagerConfig = RNDTokenManagerConfig()  # type: ignore[call-arg]
+
+    embedding: EmbeddingConfig = EmbeddingConfig()  # type: ignore[call-arg]
+    rag: RagConfig = RagConfig()  # type: ignore[call-arg]
+    open_search: OpenSearchConfig = OpenSearchConfig()  # type: ignore[call-arg]
+
     project: ProjectConfig = ProjectConfig()  # type: ignore[call-arg]
     prometheus: PrometheusConfig = PrometheusConfig()  # type: ignore[call-arg]
     api: APIConfig = APIConfig()  # type: ignore[call-arg]

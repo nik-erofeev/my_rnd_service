@@ -33,6 +33,11 @@ dependencies = [
     "prometheus-fastapi-instrumentator>=7.1.0",
     "ipykernel>=7.1.0",
     "ipython>=8.38.0",
+    "langchain-huggingface>=1.2.0",
+    "ollama>=0.6.1",
+    "sentence-transformers>=5.2.0",
+    "opensearch-py>=3.1.0",
+    "loguru>=0.7.3",
 ]
 requires-python = ">=3.10"
 
