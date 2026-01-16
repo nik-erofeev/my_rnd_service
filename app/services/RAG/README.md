@@ -21,14 +21,13 @@ pip install uv
 ```bash
 # Из корня проекта
 uv sync --no-install-project --all-groups
-
 ```
 
 ## 🚀 Быстрый старт
 
-Основной точкой входа для демонстрации работы пайплайна является скрипт `example_service.py`.
+Основной точкой входа для демонстрации работы пайплайна является скрипт `local_runner.py`.
 
-### Запуск примера(только пайплайна)
+### Запуск примера (только пайплайна)
 
 #### Вариант 1: Использование uv run (рекомендуется)
 
@@ -50,15 +49,14 @@ export PYTHONPATH=$PYTHONPATH:$(pwd)
 python -m app.services.RAG.local_runner
 ```
 
-
 ### Пример успешного вывода
 
 ```text
-2024-12-17 15:30:45 - INFO - example_service - Получили ответ от RAG-пайплайна:
- {'messages': [HumanMessage(content='Какой сегодня день?'), AIMessage(content='Сегодня среда, 17 декабря 2025 года.')], 'retrieved': [], 'intent': 'general'}
+2024-12-17 15:30:45 - INFO - local_runner - Получили ответ от RAG-пайплайна:
+ {'messages': [HumanMessage(content='Какие документы нужны для оформления ипотеки?'), AIMessage(content='...')], 'retrieved': [...], 'intent': [...]}
 
-2024-12-17 15:30:45 - INFO - example_service - Последнее сообщение в чате:
- Сегодня среда, 17 декабря 2025 года.
+2024-12-17 15:30:45 - INFO - local_runner - Последнее сообщение в чате:
+ Для оформления ипотеки вам потребуются следующие документы...
 ```
 
 ## 🏗 Архитектура проекта
@@ -66,36 +64,75 @@ python -m app.services.RAG.local_runner
 ### Структура модулей
 
 ```
-sevice/
-├── RAG/                   # Основной RAG пайплайн
-│   ├── graph/             # Построение графа
-│   │   └── builder.py     # RAGGraphBuilder - конструктор графа
-│   ├── nodes/             # Узлы обработки
-│   │   ├── base/          # Базовые классы узлов
-│   │   ├── preprocessing/ # Предобработка (Intent, Retriever)
-│   │   ├── retrieval/     # Извлечение документов
-│   │   └── postprocessing/# Постобработка (Reranker, AnswerChecker)
-│   ├── utils/             # Утилиты
-│   │   └── prompts/       # Промпты для LLM
-│   ├── pipeline.py        # RAGPipeline - основной класс
-│   └── state.py           # RAGState - состояние пайплайна
-├── llm/                   # LLM модули
-│   ├── llm.py             # AsyncLLM - асинхронный LLM
-│   └── schemas.py         # Схемы данных
-├── example_service.py     # Пример использования
-└── exceptions.py          # Исключения
+app/services/
+├── RAG/                           # Основной RAG модуль
+│   ├── rag_pipeline/              # Пайплайн RAG
+│   │   ├── graph/                 # Построение графа
+│   │   │   └── builder.py         # RAGGraphBuilder — конструктор графа
+│   │   ├── nodes/                 # Узлы обработки
+│   │   │   ├── base/              # Базовые классы
+│   │   │   │   ├── base_node.py   # BaseNode — абстрактный узел
+│   │   │   │   └── base_llm.py    # BaseLLM — узел генерации ответа
+│   │   │   ├── preprocessing/     # Предобработка
+│   │   │   │   ├── intent.py      # IntentClassifier — классификация намерений
+│   │   │   │   └── router.py      # DocsCounter — условная маршрутизация
+│   │   │   ├── retrieval/         # Работа с документами
+│   │   │   │   ├── retriever.py   # RetrieverIntent — поиск документов
+│   │   │   │   └── reranker.py    # Reranker — переранжирование
+│   │   │   └── postprocessing/    # Постобработка
+│   │   │       └── answer_checker.py  # AnswerChecker — проверка ответа
+│   │   ├── embeddings/            # Эмбеддинги
+│   │   │   └── embedding.py       # Embedding — модель эмбеддингов
+│   │   ├── utils/                 # Утилиты
+│   │   │   └── prompts/           # Промпты для LLM
+│   │   │       ├── prompts.py     # Шаблоны промптов
+│   │   │       └── manager.py     # PromptManager — менеджер промптов
+│   │   ├── pipeline.py            # RAGPipeline — основной класс пайплайна
+│   │   └── state.py               # RAGState — состояние пайплайна
+│   ├── llm/                       # LLM модули
+│   │   ├── llm.py                 # AsyncLLM, LocalAsyncYandexLLM, LocalAsyncOllamaLLM
+│   │   ├── schemas.py             # Pydantic-схемы ответов LLM
+│   │   ├── EPA/                   # EPA Token Manager
+│   │   │   ├── epa_token.py       # EPATokenManager
+│   │   │   ├── schemas.py         # Схемы EPA
+│   │   │   └── exceptions.py      # Исключения EPA
+│   │   └── TYK/                   # TYK API Gateway
+│   │       ├── yandex.py          # TYKClient
+│   │       └── exceptions.py      # Исключения TYK
+│   ├── local_runner.py            # Локальный запуск пайплайна
+│   ├── exceptions.py              # RagPipelineError
+│   └── README.md                  # Этот файл
+├── rag_service.py                 # RagService — бизнес-сервис
+└── ...
+```
+
+### DependencyContainer
+
+Контейнер зависимостей (`app/core/container.py`) управляет ленивой инициализацией всех компонентов RAG:
+
+```python
+from app.core.config import CONFIG
+from app.core.container import DependencyContainer
+
+container = DependencyContainer(config=CONFIG)
+
+# Ленивая инициализация
+llm = container.llm                    # AsyncLLM или LocalAsyncYandexLLM
+graph_builder = container.graph_builder  # RAGGraphBuilder
+pipeline = container.pipeline          # RAGPipeline
+service = container.service            # RagService
 ```
 
 ### Граф обработки
 
-Пайплайн состоит из следующих узлов (см. `RAG/graph/builder.py`):
+Пайплайн состоит из следующих узлов (см. `rag_pipeline/graph/builder.py`):
 
-1.  **IntentClassifier (`Intent`)**: Определяет намерение пользователя (FAQ, Support, General)
-2.  **RetrieverIntent (`Retriever`)**: Переформулирует запрос и выполняет поиск документов
-3.  **DocsCounter (`Router`)**: Проверяет наличие найденных документов
-4.  **Reranker (`Reranker`)**: Переупорядочивает документы по релевантности
-5.  **BaseLLM (`llm`)**: Генерирует финальный ответ на основе контекста
-6.  **AnswerChecker (`AnswerChecker`)**: (Опционально) Проверяет качество ответа
+1. **IntentClassifier (`Intent`)**: Определяет намерение пользователя, переформулирует запрос для векторного поиска
+2. **RetrieverIntent (`Retriever`)**: Выполняет поиск документов в VectorDB (OpenSearch)
+3. **DocsCounter (`Router`)**: Условная маршрутизация — проверяет наличие найденных документов
+4. **Reranker (`Reranker`)**: Переупорядочивает документы по релевантности
+5. **BaseLLM (`llm`)**: Генерирует финальный ответ на основе контекста
+6. **AnswerChecker (`AnswerChecker`)**: (Опционально) Проверяет качество ответа
 
 ### Поток данных
 
@@ -107,12 +144,22 @@ graph TD
     D -->|Yes| E[Reranking]
     D -->|No| F[End: No Documents]
     E --> G[LLM Generation]
-    G --> H[Answer Checking]
-    H --> I[Final Response]
+    G --> H{use_answer_checker?}
+    H -->|Yes| I[Answer Checking]
+    H -->|No| J[Final Response]
+    I --> J
 ```
 
-Данные между узлами передаются через объект состояния `RAGState` (см. `RAG/state.py`).
+### RAGState
 
+Данные между узлами передаются через объект состояния `RAGState` (см. `rag_pipeline/state.py`):
+
+```python
+class RAGState(TypedDict, total=False):
+    messages: Annotated[list[BaseMessage], add_messages]  # История сообщений
+    retrieved: list[Any]                                   # Найденные документы
+    intent: Annotated[list[BaseMessage], add_messages]     # Классификация намерений
+```
 
 ## 🛠 Расширение функционала
 
@@ -120,65 +167,77 @@ graph TD
 
 Чтобы добавить новый шаг обработки (например, фильтрацию токсичности):
 
-1.  **Создайте класс узла**:
+1. **Создайте класс узла**:
+
     ```python
-    # rag_langchain/RAG/nodes/safety/safety_check.py
-    from rag_langchain.RAG.nodes.base.base_node import BaseNode
-    from rag_langchain.RAG.state import RAGState
+    # app/services/RAG/rag_pipeline/nodes/safety/safety_check.py
+    from app.services.RAG.rag_pipeline.nodes.base.base_node import BaseNode
+    from app.services.RAG.rag_pipeline.state import RAGState
     from langchain_core.messages import AIMessage
 
     class SafetyCheck(BaseNode):
-        async def ainvoke(self, state: RAGState) -> RAGState:
+        async def ainvoke(self, state: RAGState) -> dict:
             # Ваша логика проверки безопасности
             user_message = state.get("messages", [])[-1].content
             is_safe = self._check_safety(user_message)
 
             if not is_safe:
                 return {
-                    "messages": state["messages"] + [
+                    "messages": [
                         AIMessage(content="Извините, не могу обработать этот запрос.")
                     ]
                 }
-            return state
+            return {}
 
         def _check_safety(self, text: str) -> bool:
             # Реализация проверки безопасности
             return True
     ```
 
-2.  **Зарегистрируйте узел в графе**:
-    ```python
-    # В rag_langchain/RAG/graph/builder.py
-    from rag_langchain.RAG.nodes.safety.safety_check import SafetyCheck
+2. **Зарегистрируйте узел в графе**:
 
-    # В методе build()
+    ```python
+    # В app/services/RAG/rag_pipeline/graph/builder.py
+    from app.services.RAG.rag_pipeline.nodes.safety.safety_check import SafetyCheck
+
+    # В методе _build_graph()
     safety = SafetyCheck()
     builder.add_node("Safety", safety.ainvoke)
     builder.add_edge(START, "Safety")
     builder.add_edge("Safety", "Intent")
     ```
 
+3. **Добавьте промпт** (если узел использует LLM):
+
+    ```python
+    # В app/services/RAG/rag_pipeline/utils/prompts/prompts.py
+    all_prompts = {
+        # ... существующие промпты ...
+        "SafetyCheck": [
+            "Проверьте сообщение на безопасность: {message}",
+        ],
+    }
+    ```
+
 ### Кастомизация промптов
 
-Промпты находятся в `rag_langchain/RAG/utils/prompts/prompts.py`:
+Промпты хранятся в `rag_pipeline/utils/prompts/prompts.py`:
 
 ```python
-CUSTOM_PROMPTS = {
-    "intent_classification": """
-    Определи намерение пользователя:
-    - FAQ: вопросы о продукте/сервисе
-    - Support: технические проблемы
-    - General: общие вопросы
-
-    Вопрос: {question}
-    Намерение:
-    """,
-    "answer_generation": """
-    Контекст: {context}
-    Вопрос: {question}
-
-    Дай краткий и точный ответ на основе контекста.
-    """
+all_prompts = {
+    "BaseLLM": [
+        "Как профессиональный AI-ассистент... Пользователь написал: {message}, "
+        "наша переписка: {history}, есть контекст: {context}. Что вы ответите?",
+    ],
+    "Classifier": [
+        "Определите намерение пользователя... Сообщение: {message}, история: {history}.",
+    ],
+    "Retriever": [
+        "Измените сообщение для улучшения векторного поиска. Сообщение: {message}.",
+    ],
+    "AnswerChecker": [
+        "Проверьте релевантность ответа. Вопрос: {message}, ответ: {answer}, контекст: {context}.",
+    ],
 }
 ```
 
@@ -190,7 +249,7 @@ CUSTOM_PROMPTS = {
 # Установка dev зависимостей
 uv sync --group dev --no-install-project
 
-# Запуск тестов (если есть)
+# Запуск тестов
 uv run pytest
 
 # Проверка типов
@@ -209,7 +268,8 @@ uv run isort app/services/RAG
 import logging
 logging.basicConfig(level=logging.DEBUG)
 
-# В rag_service.py уже настроено цветное логирование
+# Логи с emoji-префиксами:
+# ✅ успех, ❌ ошибка, 🔧 инициализация, 🚀 запуск, 💤 остановка
 ```
 
 ## 📦 Зависимости
@@ -217,10 +277,11 @@ logging.basicConfig(level=logging.DEBUG)
 ### Основные зависимости
 
 - **langgraph** (>=1.0.4): Фреймворк для построения графов обработки
-- **langchain-huggingface** (>=1.1.0): Интеграция с Hugging Face моделями
-- **pydantic** (>=2.12.5): Валидация данных и схемы
-- **torch** (>=2.9.1): Для работы с ML моделями
-- **numpy** (>=2.3.5): Численные вычисления
+- **langchain-core**: Базовые абстракции LangChain
+- **pydantic** (>=2.0): Валидация данных и схемы
+- **httpx**: Асинхронный HTTP-клиент
+- **tenacity**: Retry-логика для API-вызовов
+- **torch**: Для работы с ML моделями (эмбеддинги, реранкер)
 
 ### Dev зависимости
 
@@ -228,43 +289,46 @@ logging.basicConfig(level=logging.DEBUG)
 - **isort**: Сортировка импортов
 - **mypy**: Проверка типов
 - **pre-commit**: Git хуки для качества кода
+- **pytest**: Тестирование
 
-## 🚀 Производственное использование
+## 🚀 LLM Провайдеры
 
-### Docker
+Проект поддерживает несколько вариантов LLM:
 
-Создайте `Dockerfile`:
-
-```dockerfile
-FROM python:3.12-slim
-
-WORKDIR /app
-COPY pyproject.toml uv.lock ./
-RUN pip install uv && uv sync --frozen
-
-COPY . .
-CMD ["uv", "run", "python", "-m", "app.service_main"]
-```
-
-### API сервер
-
-Пример интеграции с FastAPI:
+### 1. AsyncLLM (TYK или RnD режим)
 
 ```python
-from fastapi import FastAPI
-from rag_langchain.RAG.pipeline import RAGPipeline
-from rag_langchain.RAG.graph.builder import RAGGraphBuilder
-from rag_langchain.llm.llm import AsyncLLM
+from app.services.RAG.llm.llm import AsyncLLM
 
-app = FastAPI()
-llm = AsyncLLM()
-graph_builder = RAGGraphBuilder(async_llm=llm)
-rag_pipeline = RAGPipeline(graph=graph_builder.build())
+# Конфигурируется через EnvConfig
+# use_tyk=True  → EPA + TYK API Gateway
+# use_tyk=False → Прямое подключение через rnd_connectors
+```
 
-@app.post("/query")
-async def query_rag(question: str):
-    result = await rag_pipeline.query(message=question)
-    return {"answer": result["messages"][-1].content}
+### 2. LocalAsyncYandexLLM (для локальной разработки)
+
+```python
+from app.services.RAG.llm.llm import LocalAsyncYandexLLM
+
+llm = LocalAsyncYandexLLM(
+    api_key="your-yandex-api-key",
+    folder_id="your-folder-id",
+    model="yandexgpt-lite",
+    url="https://llm.api.cloud.yandex.net/foundationModels/v1/completion",
+)
+```
+
+### 3. LocalAsyncOllamaLLM (для локальной разработки с Ollama)
+
+```python
+from app.services.RAG.llm.llm import LocalAsyncOllamaLLM
+
+llm = LocalAsyncOllamaLLM(
+    model="mistral",              # или "llama3.2:3b"
+    base_url="http://127.0.0.1:11434",
+    temperature=0.82,
+    max_tokens=2000,
+)
 ```
 
 ## 📚 Примеры использования
@@ -273,29 +337,29 @@ async def query_rag(question: str):
 
 ```python
 import asyncio
-from rag_langchain.llm.llm import AsyncLLM
-from rag_langchain.RAG.graph.builder import RAGGraphBuilder
-from rag_langchain.RAG.pipeline import RAGPipeline
+from app.core.config import CONFIG
+from app.core.container import DependencyContainer
 
 async def simple_query():
-    # Инициализация компонентов
-    llm = AsyncLLM()
-    graph_builder = RAGGraphBuilder(async_llm=llm, use_answer_checker=True)
-    rag_pipeline = RAGPipeline(graph=graph_builder.build())
+    container = DependencyContainer(config=CONFIG)
 
-    # Выполнение запроса
-    result = await rag_pipeline.query(message="Что такое машинное обучение?")
+    try:
+        await container.init_async()
+        rag_pipeline = container.pipeline
 
-    # Получение ответа
-    answer = result["messages"][-1].content
-    intent = result.get("intent", "unknown")
-    documents = result.get("retrieved", [])
+        result = await rag_pipeline.query(
+            message="Какие документы нужны для оформления ипотеки?"
+        )
 
-    print(f"Ответ: {answer}")
-    print(f"Намерение: {intent}")
-    print(f"Найдено документов: {len(documents)}")
+        answer = result["messages"][-1].content
+        intent = result.get("intent", [])
+        documents = result.get("retrieved", [])
 
-# Запуск
+        print(f"Ответ: {answer}")
+        print(f"Найдено документов: {len(documents)}")
+    finally:
+        await container.aclose()
+
 asyncio.run(simple_query())
 ```
 
@@ -303,14 +367,14 @@ asyncio.run(simple_query())
 
 ```python
 async def batch_processing():
-    llm = AsyncLLM()
-    graph_builder = RAGGraphBuilder(async_llm=llm)
-    rag_pipeline = RAGPipeline(graph=graph_builder.build())
+    container = DependencyContainer(config=CONFIG)
+    await container.init_async()
+    rag_pipeline = container.pipeline
 
     questions = [
         "Как работает нейронная сеть?",
         "Что такое глубокое обучение?",
-        "Объясни алгоритм градиентного спуска"
+        "Объясни алгоритм градиентного спуска",
     ]
 
     results = []
@@ -319,60 +383,24 @@ async def batch_processing():
         results.append({
             "question": question,
             "answer": result["messages"][-1].content,
-            "intent": result.get("intent")
         })
 
+    await container.aclose()
     return results
 ```
 
-### Кастомная конфигурация
+### Визуализация графа
 
 ```python
-async def custom_config():
-    # Кастомные настройки LLM
-    llm = AsyncLLM(
-        model_name="yandex_example",
-        temperature=0.3,
-        max_tokens=500
-    )
+from app.core.config import CONFIG
+from app.core.container import DependencyContainer
 
-    # Граф без проверки ответов
-    graph_builder = RAGGraphBuilder(
-        async_llm=llm,
-        use_answer_checker=False
-    )
+container = DependencyContainer(config=CONFIG)
+graph_builder = container.graph_builder
 
-    rag_pipeline = RAGPipeline(graph=graph_builder.build())
-
-    result = await rag_pipeline.query(
-        message="Техническая документация по API"
-    )
-
-    return result
+# Отобразить граф в Jupyter Notebook
+graph_builder.get_image_graph()
 ```
-
-## 🔍 Мониторинг и логирование
-
-### Настройка детального логирования
-
-```python
-import logging
-from rag_langchain.example_service import ColoredFormatter
-
-def setup_detailed_logging():
-    logger = logging.getLogger("rag_langchain")
-    logger.setLevel(logging.DEBUG)
-
-    handler = logging.StreamHandler()
-    formatter = ColoredFormatter(
-        fmt="%(asctime)s - %(levelname)s - %(name)s:%(lineno)d - %(message)s"
-    )
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-
-    return logger
-```
-
 
 ## 🐛 Troubleshooting
 
@@ -381,12 +409,12 @@ def setup_detailed_logging():
 #### 1. Ошибка импорта модулей
 
 ```bash
-# Проблема: ModuleNotFoundError: No module named 'rag_langchain'
+# Проблема: ModuleNotFoundError: No module named 'app'
 # Решение: Установите PYTHONPATH или используйте uv run
 
 export PYTHONPATH=$PYTHONPATH:$(pwd)
 # или
-uv run python -m app.service_main
+uv run python -m app.services.RAG.local_runner
 ```
 
 #### 2. Проблемы с зависимостями
@@ -396,60 +424,46 @@ uv run python -m app.service_main
 # Решение: Пересоздайте окружение
 
 rm -rf .venv
-uv sync --no-install-project
+uv sync --no-install-project --all-groups
 ```
 
 #### 3. Ошибки LLM
 
 ```python
 # Проблема: Timeout или API ошибки
-# Решение: Настройте retry и timeout
+# Решение: Проверьте переменные окружения и retry-логику
 
-from tenacity import retry, stop_after_attempt, wait_exponential
-
-class AsyncLLM:
-    @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=4, max=10)
-    )
-    async def ainvoke(self, messages):
-        # Ваш код LLM
-        pass
+# В .env файле:
+YC_API_KEY=your-api-key
+YC_FOLDER_ID=your-folder-id
 ```
 
 #### 4. Проблемы с памятью
 
 ```python
 # Проблема: OutOfMemoryError при обработке больших документов
-# Решение: Ограничьте размер контекста
+# Решение: RAGPipeline использует torch.no_grad() для экономии памяти
 
-def truncate_context(documents, max_tokens=2000):
-    context = ""
-    for doc in documents:
-        if len(context) + len(doc.page_content) > max_tokens:
-            break
-        context += doc.page_content + "\n"
-    return context
+# Дополнительно можно ограничить размер контекста в промптах
 ```
 
 ### Отладочные команды
 
 ```bash
 # Проверка установки
-uv run python -c "import app.services.RAG.rag_pipeline; print('OK')"
+uv run python -c "from app.services.RAG.rag_pipeline import pipeline; print('OK')"
 
 # Проверка зависимостей
 uv tree
 
-# debug
+# Debug режим
 uv run python -m pdb -m app.services.RAG.local_runner
 
 # Профилирование
 uv run python -m cProfile -m app.services.RAG.local_runner
 ```
 
-
-### Разработка
+## 🔧 Разработка
 
 1. Форкните репозиторий
 2. Создайте ветку для фичи: `git checkout -b feature/amazing-feature`
@@ -462,7 +476,8 @@ uv run python -m cProfile -m app.services.RAG.local_runner
 ### Стиль кода
 
 Проект использует:
-- **Black** для форматирования
+
+- **Black** для форматирования (line-length: 120)
 - **isort** для сортировки импортов
 - **mypy** для проверки типов
 - **pre-commit** для автоматических проверок
@@ -474,4 +489,20 @@ uv run isort app/services/RAG/
 
 # Проверка типов
 uv run mypy app/services/RAG/
+```
+
+### Порядок импортов
+
+```python
+# 1. Standard library
+import logging
+from typing import Any
+
+# 2. Third-party
+from langchain_core.messages import BaseMessage
+from langgraph.graph import StateGraph
+
+# 3. Local (app.*)
+from app.core.config import CONFIG
+from app.services.RAG.rag_pipeline.state import RAGState
 ```
