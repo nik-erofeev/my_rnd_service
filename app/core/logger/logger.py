@@ -19,7 +19,9 @@ from rnd_connectors.tslg.protocols import TSLGConfigProtocol
 # Constants
 # ============================================================================
 
-LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - requestId: %(request_id)s - %(message)s"
+LOG_FORMAT = (
+    "%(asctime)s | %(levelname)-8s | %(name)s:%(funcName)s:%(lineno)d - requestId: %(request_id)s - %(message)s"
+)
 DEFAULT_LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
