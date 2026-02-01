@@ -1,7 +1,7 @@
 import logging
 from typing import Any
 
-from app.services.RAG.exceptions import RagPipelineError
+from app.services.RAG.rag_pipeline.exceptions import RagPipelineError
 from app.services.RAG.rag_pipeline.nodes.base.base_llm import BaseLLM
 from app.services.RAG.rag_pipeline.state import RAGState
 

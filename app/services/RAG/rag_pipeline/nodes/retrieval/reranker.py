@@ -1,6 +1,6 @@
 import logging
 
-from app.services.RAG.exceptions import RagPipelineError
+from app.services.RAG.rag_pipeline.exceptions import RagPipelineError
 from app.services.RAG.rag_pipeline.nodes.base.base_node import BaseNode
 from app.services.RAG.rag_pipeline.state import RAGState
 

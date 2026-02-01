@@ -6,7 +6,7 @@ import httpx
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from app.core.config import EPATokenManagerConfig, RNDTokenManagerConfig, RNDYandexConfig, TYKYandexConfig
-from app.services.RAG.exceptions import RagPipelineError
+from app.services.RAG.rag_pipeline.exceptions import RagPipelineError
 from app.services.RAG.llm.EPA.epa_token import EPATokenManager
 from app.services.RAG.llm.schemas import AlternativesSchema, MessageSchema, ResponseYAGPTSchema
 from app.services.RAG.llm.TYK.exceptions import TYKClientError

@@ -5,7 +5,7 @@ import torch
 from langchain_core.messages import HumanMessage
 from langchain_core.runnables import RunnableConfig
 
-from app.services.RAG.exceptions import RagPipelineError
+from app.services.RAG.rag_pipeline.exceptions import RagPipelineError
 from app.services.RAG.rag_pipeline.state import RAGState
 
 logger = logging.getLogger(__name__)

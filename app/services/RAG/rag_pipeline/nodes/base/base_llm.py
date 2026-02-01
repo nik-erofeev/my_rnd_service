@@ -4,7 +4,7 @@ from typing import Any
 from langchain_core.messages import AIMessage
 from langchain_core.prompts import PromptTemplate
 
-from app.services.RAG.exceptions import RagPipelineError
+from app.services.RAG.rag_pipeline.exceptions import RagPipelineError
 from app.services.RAG.llm.llm import AsyncLLM
 from app.services.RAG.llm.schemas import ResponseYAGPTSchema
 from app.services.RAG.rag_pipeline.nodes.base.base_node import BaseNode
